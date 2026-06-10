@@ -19,3 +19,16 @@ def test_root_must_return_hello_world():
     # assert
     assert response.json() == {'message': 'Hello world'}
     assert response.status_code == HTTPStatus.OK
+
+
+def test_vamps_must_return_html_with_vamps_names():
+    client = TestClient(app)
+    response = client.get('/vamps')
+    assert response.text == '<h1>Vamps:</h1>\
+        <p>Angel, Spike, Drusilla</p>'
+
+
+def test_vamps_status_code_OK():
+    client = TestClient(app)
+    response = client.get('/vamps')
+    assert response.status_code == HTTPStatus.OK
