@@ -7,7 +7,7 @@ from fastapi_study_project.app import app
 
 def test_root_must_return_hello_world():
     """
-    Triple A test
+    Triple A testD
     A: Arrange
     A: Act - executes SUT
     A: Assert - asserts that x is x
