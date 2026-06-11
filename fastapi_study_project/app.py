@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
 
 from fastapi_study_project.schemas import (
     Message,
@@ -15,15 +14,16 @@ app = FastAPI()
 database = []
 
 
+def check_user_id(user_id: int):
+    if user_id > len(database) or user_id < 1:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
+        )
+
+
 @app.get('/', status_code=HTTPStatus.OK, response_model=Message)
 def read_root():
     return {'message': 'Hello world'}
-
-
-@app.get('/vamps/', status_code=HTTPStatus.OK, response_class=HTMLResponse)
-def read_vamps():
-    return '<h1>Vamps:</h1>\
-        <p>Angel, Spike, Drusilla</p>'
 
 
 @app.post('/users/', status_code=HTTPStatus.CREATED, response_model=UserPublic)
@@ -44,12 +44,32 @@ def read_users():
     '/users/{user_id}', status_code=HTTPStatus.OK, response_model=UserPublic
 )
 def update_user(user_id: int, user: UserSchema):
-    if user_id > len(database) or user_id < 1:
-        raise HTTPException(
-            status_code=HTTPStatus.NOT_FOUND, detail='User not found'
-        )
-
+    check_user_id(user_id)
     user_with_id = UserDB(**user.model_dump(), id=user_id)
     database[user_id - 1] = user_with_id
 
     return user_with_id
+
+
+@app.delete(
+    '/users/{user_id}',
+    status_code=HTTPStatus.OK,
+    # big discussion if delete should return something or not.
+    # when not returning, HTTP status will be 204 (no content).
+    # when returning, 200. in this case it will return, so 200.
+    response_model=UserPublic,
+)
+def delete_user(user_id: int):
+    check_user_id(user_id)
+
+    return database.pop(user_id - 1)
+
+
+@app.get(
+    '/users/{user_id}', status_code=HTTPStatus.OK, response_model=UserPublic
+)
+def read_user_by_id(user_id: int):
+
+    check_user_id(user_id)
+
+    return database[user_id - 1]

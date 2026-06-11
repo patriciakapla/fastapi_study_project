@@ -7,20 +7,6 @@ def test_root_must_return_hello_world(client):
     assert response.status_code == HTTPStatus.OK
 
 
-def test_vamps_must_return_html_with_vamps_names(client):
-    response = client.get('/vamps')
-    assert (
-        response.text
-        == '<h1>Vamps:</h1>\
-        <p>Angel, Spike, Drusilla</p>'
-    )
-
-
-def test_vamps_status_code_ok(client):
-    response = client.get('/vamps')
-    assert response.status_code == HTTPStatus.OK
-
-
 def test_create_user(client):
 
     response = client.post(
@@ -73,7 +59,40 @@ def test_update_client(client):
     }
 
 
-def test_update_client_exception(client):
+def test_delete_user(client):
+    response = client.delete('/users/1')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'bob',
+        'email': 'bob@example.com',
+        'id': 1,
+    }
+
+
+def test_read_user_by_id(client):
+
+    client.post(
+        '/users/',
+        json={
+            'id': 1,
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mistery',
+        },
+    )
+
+    response = client.get('/users/1')
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json() == {
+        'username': 'bob',
+        'email': 'bob@example.com',
+        'id': 1,
+    }
+
+
+def test_check_user_id(client):
     response = client.put(
         '/users/2',
         json={
