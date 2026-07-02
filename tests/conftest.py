@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 from fastapi_study_project.app import app
 from fastapi_study_project.database import get_session
 from fastapi_study_project.models import User, table_registry
+from fastapi_study_project.security import get_password_hash
 
 
 @pytest.fixture
@@ -49,15 +50,21 @@ def session():
 
 
 @pytest.fixture
-def add_user(session: Session):
+def user(session: Session):
+    pwd = 'mistery'
     user = User(
         username='bob',
         email='bob@example.com',
-        password='mistery',
+        password=get_password_hash(pwd),
     )
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    user.clean_password = pwd  # pyright: ignore
+    # monkeypatch! -> change or attach behavior/data at runtime.
+    # here, clean password isnt on the db, only in the object
+    # we'll use for verifying if hash pwd = clean pwd
 
     return user
 
@@ -82,3 +89,14 @@ def _mock_db_time(model, time=datetime(2026, 6, 26)):
 @pytest.fixture
 def mock_db_time():
     return _mock_db_time
+
+
+@pytest.fixture
+def token(client, user):
+
+    response = client.post(
+        '/token',
+        data={'username': user.email, 'password': user.clean_password},
+    )
+
+    return response.json()['access_token']
