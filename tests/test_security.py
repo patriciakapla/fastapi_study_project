@@ -3,8 +3,6 @@ from http import HTTPStatus
 from jwt import decode
 
 from fastapi_study_project.security import (
-    ALGORITHM,
-    SECRET_KEY,
     create_access_token,
     get_password_hash,
     verify_password,
@@ -22,12 +20,12 @@ def test_password_verification():
     assert verification
 
 
-def test_jwt():
+def test_jwt(settings):
     claim = {'test': 'test'}
 
     token = create_access_token(claim)
 
-    decoded = decode(token, SECRET_KEY, ALGORITHM)
+    decoded = decode(token, settings.SECRET_KEY, settings.ALGORITHM)
 
     assert decoded['test'] == claim['test']
     assert 'exp' in decoded
