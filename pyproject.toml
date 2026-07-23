@@ -13,7 +13,8 @@ dependencies = [
     "pydantic-settings (>=2.14.2,<3.0.0)",
     "alembic (>=1.18.4,<2.0.0)",
     "pwdlib[argon2] (>=0.3.0,<0.4.0)",
-    "pyjwt (>=2.13.0,<3.0.0)"
+    "pyjwt (>=2.13.0,<3.0.0)",
+    "aiosqlite (>=0.22.1,<0.23.0)"
 ]
 
 
@@ -26,7 +27,8 @@ dev = [
     "ruff (>=0.15.14,<0.16.0)",
     "pytest (>=9.0.3,<10.0.0)",
     "pytest-cov (>=7.1.0,<8.0.0)",
-    "taskipy (>=1.14.1,<2.0.0)"
+    "taskipy (>=1.14.1,<2.0.0)",
+    "pytest-asyncio (>=1.4.0,<2.0.0)"
 ]
 
 
@@ -45,6 +47,7 @@ quote-style = 'single'
 [tool.pytest.ini_options]
 pythonpath = "."
 addopts = '-p no:warnings'
+asyncio_default_fixture_loop_scope = 'function'
 
 [tool.taskipy.tasks]
 lint = 'ruff check'

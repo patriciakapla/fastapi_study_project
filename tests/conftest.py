@@ -2,9 +2,10 @@ from contextlib import contextmanager
 from datetime import datetime
 
 import pytest
+import pytest_asyncio
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import Session
+from sqlalchemy import event
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from fastapi_study_project.app import app
@@ -29,10 +30,10 @@ def client(session):
     app.dependency_overrides.clear()
 
 
-@pytest.fixture
-def session():
-    engine = create_engine(
-        'sqlite:///:memory:',
+@pytest_asyncio.fixture
+async def session():
+    engine = create_async_engine(
+        'sqlite+aiosqlite:///:memory:',
         connect_args={'check_same_thread': False},
         # allows multiple threads to use this connection
         # (needed for client fixture)
@@ -41,17 +42,20 @@ def session():
         # only for a single connection. Ensures only one sqlite connection
         # so in-memory database is shared.
     )
-    table_registry.metadata.create_all(engine)
 
-    with Session(engine) as s:
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.create_all)
+        # run_sync creates tables sync, NOT async!
+
+    async with AsyncSession(engine, expire_on_commit=False) as s:
         yield s
 
-    table_registry.metadata.drop_all(engine)
-    engine.dispose()
+    async with engine.begin() as conn:
+        await conn.run_sync(table_registry.metadata.drop_all)
 
 
-@pytest.fixture
-def user(session: Session):
+@pytest_asyncio.fixture
+async def user(session: AsyncSession):
     pwd = 'mistery'
     user = User(
         username='bob',
@@ -59,8 +63,8 @@ def user(session: Session):
         password=get_password_hash(pwd),
     )
     session.add(user)
-    session.commit()
-    session.refresh(user)
+    await session.commit()
+    await session.refresh(user)
 
     user.clean_password = pwd  # pyright: ignore
     # monkeypatch! -> change or attach behavior/data at runtime.

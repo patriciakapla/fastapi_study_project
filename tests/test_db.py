@@ -1,6 +1,8 @@
 from dataclasses import asdict
 
+import pytest
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi_study_project.models import User
 from fastapi_study_project.settings import Settings
@@ -13,18 +15,21 @@ def test_settings(monkeypatch):
     assert settings.DATABASE_URL == 'sqlite:///test.db'
 
 
-def test_create_user_object(session, mock_db_time):
+@pytest.mark.asyncio
+async def test_create_user(session: AsyncSession, mock_db_time):
     with mock_db_time(model=User) as time:
         new_user = User(
             username='buffy', email='buffy@vampslayer.com', password='angel123'
         )
 
         session.add(new_user)
-        session.commit()
+        await session.commit()
 
-        user = session.scalar(select(User).where(User.username == 'buffy'))
+        user = await session.scalar(
+            select(User).where(User.username == 'buffy')
+        )
 
-    assert asdict(user) == {
+    assert asdict(user) == {  # pyright: ignore[reportArgumentType]
         'id': 1,
         'username': 'buffy',
         'email': 'buffy@vampslayer.com',
