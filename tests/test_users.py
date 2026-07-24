@@ -22,12 +22,12 @@ def test_create_user(client):
     }
 
 
-def test_create_user_when_username_conflict(client, user):
+def test_create_user_when_username_conflict(client, other_user):
 
     response = client.post(
         '/users/',
         json={
-            'username': 'bob',
+            'username': other_user.username,
             'email': 'bobby@example.com',
             'password': 'mistery',
         },
@@ -37,13 +37,13 @@ def test_create_user_when_username_conflict(client, user):
     assert response.json() == {'detail': 'Invalid username'}
 
 
-def test_create_user_when_email_conflict(client, user):
+def test_create_user_when_email_conflict(client, other_user):
 
     response = client.post(
         '/users/',
         json={
             'username': 'bobby',
-            'email': 'bob@example.com',
+            'email': other_user.email,
             'password': 'mistery',
         },
     )
@@ -64,7 +64,7 @@ def test_read_users(client, user, token):
     assert response.json() == {'users': [user_schema]}
 
 
-def test_update_user(client, user, token):
+def test_update_user(client, token):
     response = client.put(
         '/users/1',
         headers={'Authorization': f'Bearer {token}'},
@@ -129,3 +129,28 @@ def test_read_user_by_id_when_user_not_found(client):
 
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json() == {'detail': 'User not found'}
+
+
+def test_update_user_with_wrong_user(client, token, other_user):
+    response = client.put(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+        json={
+            'username': 'bob',
+            'email': 'bob@example.com',
+            'password': 'mistery',
+        },
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}
+
+
+def test_delete_user_with_wrong_user(client, token, other_user):
+    response = client.delete(
+        f'/users/{other_user.id}',
+        headers={'Authorization': f'Bearer {token}'},
+    )
+
+    assert response.status_code == HTTPStatus.FORBIDDEN
+    assert response.json() == {'detail': 'Not enough permissions'}

@@ -3,6 +3,8 @@ from datetime import datetime
 
 import pytest
 import pytest_asyncio
+from factory.base import Factory
+from factory.declarations import LazyAttribute, Sequence
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -56,12 +58,10 @@ async def session():
 
 @pytest_asyncio.fixture
 async def user(session: AsyncSession):
-    pwd = 'mistery'
-    user = User(
-        username='bob',
-        email='bob@example.com',
-        password=get_password_hash(pwd),
-    )
+
+    pwd = 'mystery'
+    user = UserFactory(password=get_password_hash(pwd))
+
     session.add(user)
     await session.commit()
     await session.refresh(user)
@@ -70,6 +70,21 @@ async def user(session: AsyncSession):
     # monkeypatch! -> change or attach behavior/data at runtime.
     # here, clean password isnt on the db, only in the object
     # we'll use for verifying if hash pwd = clean pwd
+
+    return user
+
+
+@pytest_asyncio.fixture
+async def other_user(session: AsyncSession):
+
+    pwd = 'mystery'
+    user = UserFactory(password=get_password_hash(pwd))
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    user.clean_password = pwd  # pyright: ignore
 
     return user
 
@@ -110,3 +125,18 @@ def token(client, user):
 @pytest.fixture
 def settings():
     return Settings()
+
+
+class UserFactory(Factory):
+    class Meta:
+        model = User
+
+    # when instantiated, this class creates a new
+    # User (table class) object
+
+    username = Sequence(lambda n: f'test{n}')
+    email = LazyAttribute(lambda obj: f'{obj.username}@test.com')
+    password = LazyAttribute(lambda obj: f'{obj.username}.pass')
+    # created_at and id are init=True, so we dont have to tell
+    # the class what are the values, they are automatically
+    # generated when it goes through the db
