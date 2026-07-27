@@ -36,5 +36,6 @@ async def test_create_user(session: AsyncSession, mock_db_time):
         'password': 'angel123',
         'created_at': time,
         'updated_at': time,
+        'todos': [],
         # mock_db_time fnc yields time, so it can be used!
     }
