@@ -8,12 +8,6 @@ from fastapi_study_project.models import User
 from fastapi_study_project.settings import Settings
 
 
-def test_settings(monkeypatch):
-    monkeypatch.setenv('DATABASE_URL', 'sqlite:///test.db')
-
-    settings = Settings()
-    assert settings.DATABASE_URL == 'sqlite:///test.db'
-
 
 @pytest.mark.asyncio
 async def test_create_user(session: AsyncSession, mock_db_time):

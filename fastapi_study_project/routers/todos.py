@@ -60,7 +60,7 @@ async def list_todos(
         query = query.where(Todo.description.contains(todo_filter.description))
 
     if todo_filter.state:
-        query = query.where(Todo.state.contains(todo_filter.state))
+        query = query.where(Todo.state == todo_filter.state)
 
     todos = await session.scalars(
         query.limit(todo_filter.limit).offset(todo_filter.offset)

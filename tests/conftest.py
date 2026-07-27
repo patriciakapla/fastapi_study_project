@@ -8,7 +8,7 @@ from factory.declarations import LazyAttribute, Sequence
 from fastapi.testclient import TestClient
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.pool import StaticPool
+from testcontainers.postgres import PostgresContainer
 
 from fastapi_study_project.app import app
 from fastapi_study_project.database import get_session
@@ -32,19 +32,14 @@ def client(session):
     app.dependency_overrides.clear()
 
 
-@pytest_asyncio.fixture
-async def session():
-    engine = create_async_engine(
-        'sqlite+aiosqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        # allows multiple threads to use this connection
-        # (needed for client fixture)
-        poolclass=StaticPool,  # uses same connection to both threads
-        # necessary because in-memory SQLite database exists
-        # only for a single connection. Ensures only one sqlite connection
-        # so in-memory database is shared.
-    )
+@pytest.fixture(scope='session')
+def engine():
+    with PostgresContainer('postgres:18', driver='psycopg') as postgres:
+        yield create_async_engine(postgres.get_connection_url())
 
+
+@pytest_asyncio.fixture
+async def session(engine):
     async with engine.begin() as conn:
         await conn.run_sync(table_registry.metadata.create_all)
         # run_sync creates tables sync, NOT async!

@@ -1,0 +1,28 @@
+services:
+  dunofast_database:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  fastapi_study_project_app:
+    image: fastapi_study_project_app
+    build: .
+    entrypoint: ./entrypoint.sh
+    ports: 
+      - "8000:8000"
+    depends_on:
+      - dunofast_database
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER}
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+
+volumes:
+  pgdata:
