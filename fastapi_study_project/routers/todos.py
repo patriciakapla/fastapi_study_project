@@ -22,7 +22,8 @@ router = APIRouter(prefix='/todos', tags=['todos'])
 Session = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
-@router.post('/', response_model=TodoPublic) 
+
+@router.post('/', response_model=TodoPublic)
 async def create_todo(
     todo: TodoSchema,
     session: Session,
@@ -36,7 +37,6 @@ async def create_todo(
         state=todo.state,
         is_urgent=todo.is_urgent,
     )
-
     session.add(db_todo)
 
     await session.commit()

@@ -18,17 +18,19 @@ class TodoFactory(factory.base.Factory):
     user_id = 1
 
 
-def test_create_todo(client, token):
-    response = client.post(
-        '/todos',
-        headers={'Authorization': f'Bearer {token}'},
-        json={
-            'title': 'test todo',
-            'description': 'a good description',
-            'state': 'todo',
-            'is_urgent': False,
-        },
-    )
+def test_create_todo(client, token, mock_db_time):
+
+    with mock_db_time(model=Todo) as time:
+        response = client.post(
+            '/todos/',
+            headers={'Authorization': f'Bearer {token}'},
+            json={
+                'title': 'test todo',
+                'description': 'a good description',
+                'state': 'todo',
+                'is_urgent': False,
+            },
+        )
 
     assert response.json() == {
         'id': 1,
@@ -36,7 +38,37 @@ def test_create_todo(client, token):
         'description': 'a good description',
         'state': 'todo',
         'is_urgent': False,
+        'created_at': time.isoformat(),
+        'updated_at': time.isoformat(),
     }
+
+
+@pytest.mark.asyncio
+async def test_list_todos_should_return_expected_values(
+    session, client, user, token, mock_db_time
+):
+    with mock_db_time(model=Todo) as time:
+        todo = TodoFactory(user_id=user.id)
+        session.add(todo)
+        await session.commit()
+
+        response = client.get(
+            '/todos/',
+            headers={'Authorization': f'Bearer {token}'},
+        )
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.json()['todos'] == [
+        {
+            'id': todo.id,
+            'title': todo.title,
+            'description': todo.description,
+            'state': todo.state,
+            'is_urgent': todo.is_urgent,
+            'created_at': time.isoformat(),
+            'updated_at': time.isoformat(),
+        }
+    ]
 
 
 @pytest.mark.asyncio
