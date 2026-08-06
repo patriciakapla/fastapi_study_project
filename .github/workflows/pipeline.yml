@@ -1,0 +1,30 @@
+name: pipeline
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps: 
+      - name: Copy repository files
+        uses: actions/checkout@v4
+
+      - name: Install python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install 
+
+      - name: Run tests
+        run: poetry run task test
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL}}
+      ALGORITHM: ${{ secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+      SECRET_KEY: ${{ secrets.SECRET_KEY}}
